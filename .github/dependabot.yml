@@ -12,3 +12,7 @@ updates:
         - "*"
         update-types:
         - "patch"
+- package-ecosystem: 'terraform'
+  directory: '/'
+  schedule:
+    interval: 'daily'
