@@ -5,6 +5,7 @@ TERRAFORM_IMAGE = terraform
 
 # Terraform directory
 TERRAFORM_DIR = terraform
+PLAN_DIR = $(TERRAFORM_DIR)/plan
 
 # User and group IDs
 USER_ID = $(shell id -u)
@@ -24,7 +25,10 @@ validate: init
 
 .PHONY: plan
 plan: init
-	docker run --rm -u $(USER_ID):$(GROUP_ID) -v $(PWD)/$(TERRAFORM_DIR):/workspace -w /workspace $(TERRAFORM_IMAGE) plan
+	mkdir -p $(PLAN_DIR)
+	docker run --rm -u $(USER_ID):$(GROUP_ID) -v $(PWD)/$(TERRAFORM_DIR):/workspace -w /workspace $(TERRAFORM_IMAGE) plan -out=/workspace/plan/terraform.plan
+	docker run --rm --entrypoint /bin/sh -u $(USER_ID):$(GROUP_ID) -v $(PWD)/$(TERRAFORM_DIR):/workspace -w /workspace $(TERRAFORM_IMAGE) -c "terraform show -json /workspace/plan/terraform.plan > /workspace/plan/terraform.json"
+	docker run --rm --entrypoint /bin/sh -u $(USER_ID):$(GROUP_ID) -v $(PWD)/$(TERRAFORM_DIR):/workspace -w /workspace $(TERRAFORM_IMAGE) -c "terraform show -no-color /workspace/plan/terraform.plan > /workspace/plan/terraform.txt"
 
 .PHONY: apply
 apply: init
