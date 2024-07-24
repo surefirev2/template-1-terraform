@@ -1,0 +1,44 @@
+name: Terraform Workflow
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build Docker image
+        run: make build-image
+
+      - name: Initialize Terraform
+        run: make init
+
+      - name: Validate Terraform
+        run: make validate
+
+      - name: Plan Terraform
+        run: make plan
+
+      - name: Apply Terraform
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: make apply
