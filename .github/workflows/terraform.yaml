@@ -90,7 +90,7 @@ jobs:
           key: terraform-stale-lock-${{ github.repository }}
 
       - name: Post plan to PR
-        if: success() && github.event_name == 'pull_request'
+        if: success() && github.event_name == 'pull_request' && hashFiles('terraform/plan/terraform.txt') != ''
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: terraform-plan
