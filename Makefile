@@ -79,6 +79,16 @@ destroy: init
         -w /workspace \
         $(TERRAFORM_IMAGE) destroy -auto-approve
 
+.PHONY: force-unlock
+force-unlock: init
+	@[ -n "$(LOCK_ID)" ] || (echo "Usage: make force-unlock LOCK_ID=<uuid>" >&2; exit 1)
+	docker run --rm \
+        --env-file .env \
+        -u $(USER_ID):$(GROUP_ID) \
+        -v $(PWD)/$(TERRAFORM_DIR):/workspace \
+        -w /workspace \
+        $(TERRAFORM_IMAGE) force-unlock -force "$(LOCK_ID)"
+
 .PHONY: run-pre-commit
 run-pre-commit:
 	pre-commit run --all-files
