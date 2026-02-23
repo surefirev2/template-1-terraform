@@ -73,7 +73,8 @@ for repo in $REPOS_LIST; do
 
   git config user.name "github-actions[bot]"
   git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-  git commit -m "chore(template): sync from $ORG/template-template"
+  SOURCE_REPO="${GITHUB_REPOSITORY:-$ORG/template-1-terraform}"
+  git commit -m "chore(template): sync from $SOURCE_REPO"
   git push origin "${BRANCH}" --force
 
   DEFAULT_BASE=$(gh repo view "${ORG}/${repo}" --json defaultBranchRef -q .defaultBranchRef.name 2>/dev/null || echo "main")
@@ -82,12 +83,12 @@ for repo in $REPOS_LIST; do
     if [[ -n "${DRAFT_PR}" ]]; then
       gh pr create --repo "${ORG}/${repo}" --base "${DEFAULT_BASE}" --head "${BRANCH}" \
         --title "chore(template): sync from template repository" \
-        --body "Automated sync from $ORG/template-template. Merge when checks pass." \
+        --body "Automated sync from ${SOURCE_REPO}. Merge when checks pass." \
         --draft
     else
       gh pr create --repo "${ORG}/${repo}" --base "${DEFAULT_BASE}" --head "${BRANCH}" \
         --title "chore(template): sync from template repository" \
-        --body "Automated sync from $ORG/template-template. Merge when checks pass."
+        --body "Automated sync from ${SOURCE_REPO}. Merge when checks pass."
     fi
   else
     echo "  PR #$PR already open"
