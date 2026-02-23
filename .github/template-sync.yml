@@ -1,12 +1,10 @@
-# Target repositories to push plumbing (sync runs from this repo to these).
+# Target repositories to push terraform-only plumbing (no sync logic; they are not template repos).
 repositories:
   - "terraform-github"
 
-# Only these files are synced to downstream terraform repos (plumbing only).
-# Owned by template-template; this repo receives them and pushes to terraform-*.
+# Only terraform-specific files. Do NOT overlap with what template-template syncs to us
+# (dependabot-automerge, pre-commit-update, pre-commit, sync.yaml, .github/scripts/*).
 include_paths:
-  - ".github/workflows/dependabot-automerge.yaml"
-  - ".github/workflows/pre-commit-update.yaml"
-  - ".github/workflows/pre-commit.yaml"
-  - ".github/workflows/sync.yaml"
-  - ".github/scripts/*"
+  - ".github/workflows/terraform.yaml"
+  - ".github/dependabot.yml"
+  - ".pre-commit-config.yaml"
