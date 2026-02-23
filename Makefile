@@ -25,6 +25,7 @@ build-image:
 init: build-image
 	docker run --rm \
         --env-file .env \
+        -e HOME=/workspace \
         -u $(USER_ID):$(GROUP_ID) \
         -v $(PWD)/$(TERRAFORM_DIR):/workspace \
         -w /workspace \
@@ -34,6 +35,7 @@ init: build-image
 validate: init
 	docker run --rm \
         --env-file .env \
+        -e HOME=/workspace \
         -u $(USER_ID):$(GROUP_ID) \
         -v $(PWD)/$(TERRAFORM_DIR):/workspace \
         -w /workspace \
@@ -44,18 +46,22 @@ plan: init
 	mkdir -p $(PLAN_DIR)
 	docker run --rm \
         --env-file .env \
+        -e HOME=/workspace \
+        $(if $(TF_LOG),-e TF_LOG=$(TF_LOG),) \
         -u $(USER_ID):$(GROUP_ID) \
         -v $(PWD)/$(TERRAFORM_DIR):/workspace \
         -w /workspace \
         $(TERRAFORM_IMAGE) plan -out=/workspace/plan/terraform.plan
 	docker run --rm --entrypoint /bin/sh \
         --env-file .env \
+        -e HOME=/workspace \
         -u $(USER_ID):$(GROUP_ID) \
         -v $(PWD)/$(TERRAFORM_DIR):/workspace \
         -w /workspace \
         $(TERRAFORM_IMAGE) -c "terraform show -json /workspace/plan/terraform.plan > /workspace/plan/terraform.json"
 	docker run --rm --entrypoint /bin/sh \
         --env-file .env \
+        -e HOME=/workspace \
         -u $(USER_ID):$(GROUP_ID) \
         -v $(PWD)/$(TERRAFORM_DIR):/workspace \
         -w /workspace \
@@ -65,6 +71,7 @@ plan: init
 apply: init
 	docker run --rm \
         --env-file .env \
+        -e HOME=/workspace \
         -u $(USER_ID):$(GROUP_ID) \
         -v $(PWD)/$(TERRAFORM_DIR):/workspace \
         -w /workspace \
@@ -74,10 +81,52 @@ apply: init
 destroy: init
 	docker run --rm \
         --env-file .env \
+        -e HOME=/workspace \
         -u $(USER_ID):$(GROUP_ID) \
         -v $(PWD)/$(TERRAFORM_DIR):/workspace \
         -w /workspace \
         $(TERRAFORM_IMAGE) destroy -auto-approve
+
+.PHONY: force-unlock
+force-unlock: init
+	@[ -n "$(LOCK_ID)" ] || (echo "Usage: make force-unlock LOCK_ID=<uuid>" >&2; exit 1)
+	docker run --rm \
+        --env-file .env \
+        -e HOME=/workspace \
+        -u $(USER_ID):$(GROUP_ID) \
+        -v $(PWD)/$(TERRAFORM_DIR):/workspace \
+        -w /workspace \
+        $(TERRAFORM_IMAGE) force-unlock -force "$(LOCK_ID)"
+
+# List resources in remote state (same backend as plan/apply).
+.PHONY: state-list
+state-list: init
+	docker run --rm \
+        --env-file .env \
+        -e HOME=/workspace \
+        -u $(USER_ID):$(GROUP_ID) \
+        -v $(PWD)/$(TERRAFORM_DIR):/workspace \
+        -w /workspace \
+        $(TERRAFORM_IMAGE) state list
+
+# Remove from state all resources not in current config. Keeps only local_file.hello_world.
+# Use after state was written by an old/different config (e.g. orphaned github_* resources).
+.PHONY: state-clean-orphans
+state-clean-orphans: init
+	@docker run --rm --env-file .env -e HOME=/workspace \
+        -u $(USER_ID):$(GROUP_ID) \
+        -v $(PWD)/$(TERRAFORM_DIR):/workspace \
+        -w /workspace \
+        $(TERRAFORM_IMAGE) state list | while read -r addr; do \
+	  [ -z "$$addr" ] && continue; \
+	  [ "$$addr" = "local_file.hello_world" ] && continue; \
+	  echo "Removing $$addr"; \
+	  docker run --rm --env-file .env -e HOME=/workspace \
+        -u $(USER_ID):$(GROUP_ID) \
+        -v $(PWD)/$(TERRAFORM_DIR):/workspace \
+        -w /workspace \
+        $(TERRAFORM_IMAGE) state rm "$$addr"; \
+	done
 
 .PHONY: run-pre-commit
 run-pre-commit:
