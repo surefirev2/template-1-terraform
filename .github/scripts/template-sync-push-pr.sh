@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+# OWNED BY template-template — do not edit. Changes will be overwritten on the next sync unless made in this repo.
+# Source: https://github.com/surefirev2/template-template
+#
+# For each dependent repo: clone, copy included files, push branch, create or update PR.
+# Env: ORG, GH_TOKEN (not required if DRY_RUN=1), BRANCH, REPOS_LIST, FILES_LIST or FILES_LIST_TEMPLATE (e.g. files_to_sync_%s.txt).
+#       GITHUB_REPOSITORY (repo running the workflow) for commit/PR attribution.
+#       CHILD_PR_URLS_FILE: optional path to append "repo PR_URL" lines for each child PR (used by PR comment).
+# Options: --dry-run (no clone/push/pr), --draft (create PR as draft).
+# Usage: template-sync-push-pr.sh [--dry-run] [--draft]
+set -euo pipefail
+if [[ -n "${DEBUG:-}" ]]; then set -x; fi
+
+DRY_RUN="${DRY_RUN:-}"
+DRAFT_PR="${DRAFT_PR:-}"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run) DRY_RUN=1; shift ;;
+    --draft)   DRAFT_PR=1; shift ;;
+    *) echo "Unknown option: $1" >&2; exit 1 ;;
+  esac
+done
+
+ORG="${ORG:?ORG required}"
+# GH_TOKEN required only when not dry-run
+if [[ -z "${DRY_RUN}" ]]; then
+  GH_TOKEN="${GH_TOKEN:?GH_TOKEN required}"
+fi
+# Unique per source repo so multiple template parents don't share one branch in a child
+if [[ -n "${BRANCH:-}" ]]; then
+  :
+elif [[ -n "${GITHUB_REPOSITORY:-}" ]]; then
+  BRANCH="chore/template-sync-${GITHUB_REPOSITORY//\//-}"
+else
+  BRANCH="chore/template-sync"
+fi
+REPOS_LIST="${REPOS_LIST:-}"
+FILES_LIST="${FILES_LIST:-files_to_sync.txt}"
+FILES_LIST_TEMPLATE="${FILES_LIST_TEMPLATE:-}"
+SOURCE_REPO="${GITHUB_REPOSITORY:-$ORG/template-template}"
+CHILD_PR_URLS_FILE="${CHILD_PR_URLS_FILE:-}"
+# Resolve to absolute path so appends work when we cd into dest_repo (otherwise file is written inside dest_repo and removed)
+[[ -n "$CHILD_PR_URLS_FILE" && "$CHILD_PR_URLS_FILE" != /* ]] && CHILD_PR_URLS_FILE="$(pwd)/$CHILD_PR_URLS_FILE"
+
+[[ -n "$REPOS_LIST" ]] || { echo "No dependent repos to sync."; exit 0; }
+[[ -z "$CHILD_PR_URLS_FILE" ]] || : > "$CHILD_PR_URLS_FILE"
+
+for repo in $REPOS_LIST; do
+  [[ -n "$repo" ]] || continue
+  [[ "$repo" != "template-template" ]] || continue
+
+  # Per-repo file list when FILES_LIST_TEMPLATE is set (e.g. files_to_sync_%s.txt)
+  if [[ -n "$FILES_LIST_TEMPLATE" ]]; then
+    FILES_LIST=$(printf "$FILES_LIST_TEMPLATE" "$repo")
+  fi
+  [[ -f "$FILES_LIST" ]] || { echo "Files list not found: $FILES_LIST" >&2; exit 1; }
+
+  if [[ -n "${DRY_RUN}" ]]; then
+    echo "--- [dry-run] Would sync to $ORG/$repo ---"
+    echo "  Files:"
+    while IFS= read -r f; do
+      [[ -z "$f" ]] && continue
+      echo "    - $f"
+    done < "$FILES_LIST"
+    echo "  (no clone, push, or PR)"
+    continue
+  fi
+
+  echo "--- Syncing to $ORG/$repo ---"
+  rm -rf dest_repo
+  git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${ORG}/${repo}.git" dest_repo
+  cd dest_repo
+  git fetch origin "${BRANCH}" 2>/dev/null && git checkout "${BRANCH}" || git checkout -b "${BRANCH}"
+  cd ..
+
+  while IFS= read -r f; do
+    [[ -z "$f" ]] && continue
+    mkdir -p "dest_repo/$(dirname "$f")"
+    cp "$f" "dest_repo/$f" 2>/dev/null || true
+  done < "$FILES_LIST"
+
+  cd dest_repo
+  git add -A
+  if git diff --staged --quiet; then
+    echo "  No changes for $repo"
+    cd ..
+    rm -rf dest_repo
+    continue
+  fi
+
+  git config user.name "github-actions[bot]"
+  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+  git commit -m "chore(template): sync from $SOURCE_REPO"
+  git push origin "${BRANCH}" --force
+
+  DEFAULT_BASE=$(gh repo view "${ORG}/${repo}" --json defaultBranchRef -q .defaultBranchRef.name 2>/dev/null || echo "main")
+  PR=$(gh pr list --repo "${ORG}/${repo}" --head "${BRANCH}" --json number -q '.[0].number' 2>/dev/null || true)
+  if [[ -z "$PR" || "$PR" = "null" ]]; then
+    if [[ -n "${DRAFT_PR}" ]]; then
+      gh pr create --repo "${ORG}/${repo}" --base "${DEFAULT_BASE}" --head "${BRANCH}" \
+        --title "chore(template): sync from template repository" \
+        --body "Automated sync from $SOURCE_REPO. Merge when checks pass." \
+        --draft
+    else
+      gh pr create --repo "${ORG}/${repo}" --base "${DEFAULT_BASE}" --head "${BRANCH}" \
+        --title "chore(template): sync from template repository" \
+        --body "Automated sync from $SOURCE_REPO. Merge when checks pass."
+    fi
+    PR=$(gh pr list --repo "${ORG}/${repo}" --head "${BRANCH}" --json number -q '.[0].number' 2>/dev/null || true)
+  else
+    if [[ -z "${DRAFT_PR}" ]]; then
+      is_draft=$(gh pr view "$PR" --repo "${ORG}/${repo}" --json isDraft -q '.isDraft' 2>/dev/null || true)
+      if [[ "$is_draft" == "true" ]]; then
+        gh pr ready "$PR" --repo "${ORG}/${repo}"
+        echo "  PR #$PR marked ready for review"
+      else
+        echo "  PR #$PR already open"
+      fi
+    else
+      is_draft=$(gh pr view "$PR" --repo "${ORG}/${repo}" --json isDraft -q '.isDraft' 2>/dev/null || true)
+      if [[ "$is_draft" != "true" ]]; then
+        echo '{"draft":true}' | gh api -X PATCH "repos/${ORG}/${repo}/pulls/${PR}" --input -
+        echo "  PR #$PR marked as draft"
+      else
+        echo "  PR #$PR already open (draft)"
+      fi
+    fi
+  fi
+  if [[ -n "$CHILD_PR_URLS_FILE" && -n "$PR" && "$PR" != "null" ]]; then
+    pr_url=$(gh pr view "$PR" --repo "${ORG}/${repo}" --json url -q '.url' 2>/dev/null || true)
+    [[ -n "$pr_url" ]] && echo "$repo $pr_url" >> "$CHILD_PR_URLS_FILE"
+  fi
+
+  cd ..
+  rm -rf dest_repo
+done
+
+echo "Done."
