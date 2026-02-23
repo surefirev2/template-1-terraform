@@ -31,6 +31,8 @@ permissions:
 jobs:
   template-sync:
     runs-on: ubuntu-latest
+    env:
+      DEBUG: "1"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
