@@ -4,7 +4,9 @@ repositories:
 
 # Only terraform-specific files. Do NOT overlap with what template-template syncs to us
 # (dependabot-automerge, pre-commit-update, pre-commit, sync.yaml, .github/scripts/*).
+# Include the terraform-setup action so child repos (e.g. terraform-github) have it when they run the workflow.
 include_paths:
   - ".github/workflows/terraform.yaml"
+  - ".github/actions/terraform-setup/*"
   - ".github/dependabot.yml"
   - ".pre-commit-config.yaml"
