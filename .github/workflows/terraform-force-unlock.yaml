@@ -21,6 +21,8 @@ jobs:
 
       - name: Load GitHub PAT from 1Password
         uses: 1password/load-secrets-action@v3
+        with:
+          export-env: true
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
           GITHUB_PAT: op://surefireops/github_actions_secrets_terraform/github_classic_token
