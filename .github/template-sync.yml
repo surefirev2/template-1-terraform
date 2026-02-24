@@ -1,12 +1,14 @@
 # Target repositories to push terraform-only plumbing (no sync logic; they are not template repos).
 repositories:
   - "terraform-github"
+  - "terraform-cloudflare"
 
 # Only terraform-specific files. Do NOT overlap with what template-template syncs to us
 # (dependabot-automerge, pre-commit-update, pre-commit, sync.yaml, .github/scripts/*).
 # Include the terraform-setup action and terraform workflow scripts so child repos have them.
 include_paths:
   - ".github/workflows/terraform.yaml"
+  - ".github/workflows/terraform-force-unlock.yaml"
   - ".github/actions/terraform-setup/*"
   - ".github/scripts/*"
   - ".github/dependabot.yml"
