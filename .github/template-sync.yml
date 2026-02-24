@@ -8,6 +8,7 @@ repositories:
 # Include the terraform-setup action and terraform workflow scripts so child repos have them.
 include_paths:
   - ".github/workflows/terraform.yaml"
+  - ".github/workflows/terraform-force-unlock.yaml"
   - ".github/actions/terraform-setup/*"
   - ".github/scripts/*"
   - ".github/dependabot.yml"
