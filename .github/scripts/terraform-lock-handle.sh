@@ -11,6 +11,10 @@ set -e
 CACHE_DIR="${LOCK_CACHE_DIR:-.terraform-lock-cache}"
 STALE_SECONDS="${STALE_SECONDS:-3600}"
 
+if [ ! -f plan-exit.txt ]; then
+  echo "plan-exit.txt missing (plan step may not have written it); cannot handle lock."
+  exit 1
+fi
 plan_exit="$(cat plan-exit.txt)"
 if [ "$plan_exit" = "0" ]; then
   mkdir -p "$CACHE_DIR"
