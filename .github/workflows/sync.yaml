@@ -38,6 +38,9 @@ jobs:
           # Need merge commit and both parents so "Generate diff" can run git diff HEAD^1 HEAD^2
           fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 1 }}
 
+      - name: Ensure scripts are executable
+        run: chmod +x .github/scripts/*.sh
+
       # Create token for push, workflow_dispatch, and pull_request (needed to open/update PRs in child repos)
       - name: Create GitHub App token
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
