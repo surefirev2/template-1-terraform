@@ -10,6 +10,7 @@ include_paths:
   - "Makefile"
   - ".github/workflows/terraform.yaml"
   - ".github/workflows/terraform-force-unlock.yaml"
+  - ".github/terraform-env-vars.conf"
   - ".github/actions/terraform-setup/*"
   - ".github/scripts/*"
   - ".github/dependabot.yml"

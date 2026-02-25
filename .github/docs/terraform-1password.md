@@ -15,7 +15,7 @@ The PAT should have at least the scopes needed for the Terraform GitHub provider
 
 1. **Service account token:** In the repository (or org) secrets, set `OP_SERVICE_ACCOUNT_TOKEN` to a 1Password [service account token](https://developer.1password.com/docs/service-accounts/) that can read the vault/item above.
 
-2. **Workflows:** The Terraform and Terraform force-unlock workflows use `1password/load-secrets-action@v3` with `export-env: true` so the loaded `GITHUB_PAT` is available to subsequent steps; the Terraform setup action then writes it into `.env` as `TF_HTTP_PASSWORD` and `TF_VAR_github_token`.
+2. **Workflows:** The Terraform and Terraform force-unlock workflows use `1password/load-secrets-action@v3` with `export-env: true`, then run `.github/scripts/terraform-load-env.sh` to build `.env` from a configurable list (`.github/terraform-env-vars.conf`). That script copies listed env vars into `.env` and derives `TF_HTTP_PASSWORD` and `TF_VAR_github_token` from `GITHUB_PAT`. Downstream repos can add more variable names to `terraform-env-vars.conf` and set them in the workflow (e.g. extra 1Password refs or GitHub secrets) to customize which env vars Terraform gets in `.env`.
 
 ## Local / non-CI
 
