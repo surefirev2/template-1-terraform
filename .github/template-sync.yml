@@ -11,6 +11,6 @@ include_paths:
   - ".github/workflows/terraform.yaml"
   - ".github/workflows/terraform-force-unlock.yaml"
   - ".github/actions/terraform-setup/*"
-  - ".github/scripts/*"
+  - ".github/scripts/terraform-lock-*"
   - ".github/dependabot.yml"
   - ".pre-commit-config.yaml"
