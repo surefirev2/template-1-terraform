@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Synced from template — do not edit. Changes will be overwritten on the next sync.
 # Ensure .terraform.lock.hcl is in sync with provider requirements (backend=false view).
 #
 # Design: Committed lock file must be from terraform init -backend=false so it only lists

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Synced from template — do not edit. Changes will be overwritten on the next sync.
 # Build .env for Terraform from .github/terraform-env-vars.conf (config-driven secrets).
 #
 # Design: Single source of truth is the config file; this script is generic and must not

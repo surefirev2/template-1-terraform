@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Synced from template — do not edit. Changes will be overwritten on the next sync.
 # Run terraform init -backend=false and terraform validate so pre-commit passes in CI
 # without backend credentials. Uses a temp copy so we don't mutate the repo's .terraform.
 # Design: same idea as lockfile check (backend=false); see .github/docs/TERRAFORM_CI_DESIGN.md.

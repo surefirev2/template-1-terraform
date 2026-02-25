@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Synced from template — do not edit. Changes will be overwritten on the next sync.
 # Wait for Terraform state lock to be released, then exit 0 so the workflow can run plan/apply.
 #
 # Design: Run terraform init -reconfigure once so the container has providers (same .env and
