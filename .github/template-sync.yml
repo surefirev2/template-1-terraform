@@ -1,7 +1,7 @@
 # Target repositories to push terraform-only plumbing (no sync logic; they are not template repos).
 repositories:
   - "terraform-github"
-  # - "terraform-cloudflare"
+  - "terraform-cloudflare"
 
 # Only terraform-specific files. Do NOT overlap with what template-template syncs to us
 # (dependabot-automerge, pre-commit-update, pre-commit, sync.yaml, .github/scripts/*).
