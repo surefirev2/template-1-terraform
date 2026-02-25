@@ -32,7 +32,7 @@ Then CI will install all required providers and plan/apply will succeed.
 
 ## Pre-commit
 
-The **terraform-lockfile** hook runs on changes under `terraform/*.tf` and `terraform/*.hcl`. It runs `terraform init -backend=false -lockfile=readonly` and fails if the lock file would need to be updated, so you fix it before committing. Requires the Terraform CLI on `PATH`; use `SKIP=terraform-lockfile` to skip (e.g. if you only use Docker).
+The **terraform-lockfile** hook runs on changes under `terraform/*.tf` and `terraform/*.hcl`. It runs `terraform init -backend=false -lockfile=readonly` and fails if the lock file would need to be updated. If Terraform is not on `PATH`, the hook skips (exit 0) so shared pre-commit CI without Terraform still passes; the **Terraform workflow** installs Terraform and runs this check, so lockfile drift is still caught in CI. Use `SKIP=terraform-lockfile` to skip locally (e.g. if you only use Docker).
 
 ## CI behavior
 
