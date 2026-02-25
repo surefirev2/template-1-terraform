@@ -2,6 +2,8 @@
 
 Backend: tfstate.dev HTTP, key `surefirev2/template-1-terraform`. Requires `.env` with `TF_HTTP_PASSWORD`, `TF_GITHUB_ORG`, `TF_GITHUB_REPO` (see Terraform setup action).
 
+**Missing required provider?** CI installs providers from `terraform/.terraform.lock.hcl`. If you add a new provider (e.g. Cloudflare), run `make init` and **commit** the updated lock file. See [.github/docs/terraform-provider-lock.md](../.github/docs/terraform-provider-lock.md).
+
 **CI (GitHub Actions):** Plan and apply use a personal GitHub PAT loaded from 1Password at `op://surefireops/github_actions_secrets_terraform/github_classic_token`. The repo must have `OP_SERVICE_ACCOUNT_TOKEN` set in GitHub Actions secrets (1Password service account token). See [.github/docs/terraform-1password.md](../.github/docs/terraform-1password.md).
 
 **GitHub token permissions:** If Terraform manages `github_repository` (or similar) and plan fails with `403 Resource not accessible by integration` on vulnerability-alerts, the PAT (or GitHub App, if used elsewhere) needs **Vulnerability alerts** (Read-only). See [.github/docs/terraform-app-permissions.md](../.github/docs/terraform-app-permissions.md).
