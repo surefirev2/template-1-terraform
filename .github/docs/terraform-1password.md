@@ -1,18 +1,8 @@
 # 1Password setup for Terraform CI
 
-Terraform plan and apply (and force-unlock) load secrets from 1Password in a **config-driven** way: the workflow does not list individual secrets; `.github/terraform-env-vars.conf` is the single source of truth.
+Terraform plan and apply (and force-unlock) use secrets loaded from 1Password in CI. **Design:** env vars are config-driven via `.github/terraform-env-vars.conf` and `.github/scripts/terraform-load-env.sh`; see [TERRAFORM_CI_DESIGN.md](TERRAFORM_CI_DESIGN.md).
 
-## Config-driven design
-
-- **Add a new Terraform secret:** add one line to `.github/terraform-env-vars.conf` (e.g. `CLOUDFLARE_API_TOKEN=op://vault/item/field`). No workflow edits.
-- **Workflow:** installs 1Password CLI, runs `.github/scripts/terraform-load-env.sh` with `OP_SERVICE_ACCOUNT_TOKEN`. The script reads the config, resolves each `VAR=op://...` ref via `op read`, and writes `.env`.
-
-Config format (one per line):
-
-- `VAR_NAME` — value from environment (e.g. workflow env/secrets).
-- `VAR_NAME=op://vault/item/field` — value from 1Password (resolved by the script using the op CLI).
-
-## 1Password secret (template default)
+## 1Password secret
 
 - **Reference:** `op://surefireops/github_actions_secrets_terraform/github_classic_token`
 - **Vault:** `surefireops`
@@ -23,9 +13,9 @@ The PAT should have at least the scopes needed for the Terraform GitHub provider
 
 ## GitHub Actions
 
-1. **Service account token:** In the repository (or org) secrets, set `OP_SERVICE_ACCOUNT_TOKEN` to a 1Password [service account token](https://developer.1password.com/docs/service-accounts/) that can read the vaults/items you reference in `terraform-env-vars.conf`.
+1. **Service account token:** In the repository (or org) secrets, set `OP_SERVICE_ACCOUNT_TOKEN` to a 1Password [service account token](https://developer.1password.com/docs/service-accounts/) that can read the vault/item above.
 
-2. **Workflows:** Install 1Password CLI (`1password/install-cli-action@v2`), then run `terraform-load-env.sh` with `OP_SERVICE_ACCOUNT_TOKEN`, `TF_GITHUB_ORG`, and `TF_GITHUB_REPO`. The script reads `.github/terraform-env-vars.conf` and resolves every `VAR=op://...` line; no per-secret entries in the workflow YAML.
+2. **Workflows:** The workflow installs the 1Password CLI and runs `terraform-load-env.sh`, which reads `.github/terraform-env-vars.conf` and resolves `op://` refs into `.env` (including `TF_HTTP_PASSWORD` / `TF_VAR_github_token` derived from `GITHUB_PAT`).
 
 ## Local / non-CI
 

@@ -5,12 +5,12 @@ repositories:
 
 # Only terraform-specific files. Do NOT overlap with what template-template syncs to us
 # (dependabot-automerge, pre-commit-update, pre-commit, sync.yaml, .github/scripts/*).
+# Do NOT add .github/terraform-env-vars.conf — repo-specific (secrets/op refs); downstream must not be overwritten.
 # Include the terraform-setup action and terraform workflow scripts so child repos have them.
 include_paths:
   - "Makefile"
   - ".github/workflows/terraform.yaml"
   - ".github/workflows/terraform-force-unlock.yaml"
-  - ".github/terraform-env-vars.conf"
   - ".github/actions/terraform-setup/*"
   - ".github/scripts/*"
   - ".github/dependabot.yml"
