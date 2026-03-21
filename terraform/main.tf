@@ -1,11 +1,10 @@
 terraform {
-  backend "http" {
-    address        = "https://api.tfstate.dev/github/v1"
-    lock_address   = "https://api.tfstate.dev/github/v1/lock"
-    unlock_address = "https://api.tfstate.dev/github/v1/lock"
-    lock_method    = "PUT"
-    unlock_method  = "DELETE"
-    username       = "surefirev2/template-1-terraform"
+  backend "s3" {
+    bucket       = "surefirev2-terraform-state"
+    key          = "github/surefirev2/template-1-terraform/terraform.tfstate"
+    region       = "us-east-1"
+    encrypt      = true
+    use_lockfile = true
   }
 }
 

@@ -1,16 +1,26 @@
 # Terraform (template hello-world)
 
-Backend: tfstate.dev HTTP, key `surefirev2/template-1-terraform`. Requires `.env` with `TF_HTTP_PASSWORD`, `TF_GITHUB_ORG`, `TF_GITHUB_REPO` (see Terraform setup action).
+## Remote state (S3)
+
+- **Bucket:** `surefirev2-terraform-state` (region `us-east-1`)
+- **Key:** `github/surefirev2/template-1-terraform/terraform.tfstate`
+- **Locking:** S3 native (`use_lockfile = true` in the backend block)
+
+**tfstate.dev:** That HTTP backend is **no longer used**. The service appears **down entirely**, so prior remote state could not be migrated. This repo starts **fresh state** in S3. The next `apply` will treat every managed object as new—if real resources already exist elsewhere, you may see “already exists” errors or drift; fix with **import**, state surgery, or manual cleanup as appropriate. Do not `apply` blindly on shared environments without a plan.
+
+**Credentials:** Put `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_DEFAULT_REGION` in `.env` (see [env.template](../env.template)). `make` passes `.env` into the Terraform Docker runs.
 
 **Missing required provider?** CI installs providers from `terraform/.terraform.lock.hcl`. If you add a new provider (e.g. Cloudflare), run `make init` and **commit** the updated lock file. See [.github/docs/terraform-provider-lock.md](../.github/docs/terraform-provider-lock.md).
 
-**CI (GitHub Actions):** Plan and apply use a personal GitHub PAT loaded from 1Password at `op://surefireops/github_actions_secrets_terraform/github_classic_token`. The repo must have `OP_SERVICE_ACCOUNT_TOKEN` set in GitHub Actions secrets (1Password service account token). See [.github/docs/terraform-1password.md](../.github/docs/terraform-1password.md).
+**CI (GitHub Actions):** Plan and apply build `.env` via `.github/terraform-env-vars.conf` and `terraform-load-env.sh`, which uses the 1Password CLI to resolve `op://` refs (GitHub PAT and AWS keys for the S3 backend). Configure the **GitHub Actions repository secret** **`OP_SERVICE_ACCOUNT_TOKEN`** (the 1Password service account token); workflows reference `${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}`.
 
-**GitHub token permissions:** If Terraform manages `github_repository` (or similar) and plan fails with `403 Resource not accessible by integration` on vulnerability-alerts, the PAT (or GitHub App, if used elsewhere) needs **Vulnerability alerts** (Read-only). See [.github/docs/terraform-app-permissions.md](../.github/docs/terraform-app-permissions.md).
+See [.github/docs/terraform-1password.md](../.github/docs/terraform-1password.md).
+
+**GitHub token permissions:** If Terraform manages `github_repository` (or similar) and plan fails with `403 Resource not accessible by integration` on vulnerability-alerts, the PAT needs **Vulnerability alerts** (Read-only). See [.github/docs/terraform-app-permissions.md](../.github/docs/terraform-app-permissions.md).
 
 ## State cleanup (orphaned resources)
 
-If remote state was written by an old/different config (e.g. it contains `github_*` resources that are no longer in this config), clean it so only current resources remain.
+If remote state contains resources that are no longer in this config, clean it so only current resources remain.
 
 **Using Make (from repo root):**
 

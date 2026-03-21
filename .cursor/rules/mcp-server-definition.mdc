@@ -1,18 +1,19 @@
 ---
-description:
+description: How to add or change MCP servers in Cursor for this project
 globs:
 alwaysApply: false
 ---
-# Defining New MCP Servers
 
-To define a new MCP server in this project, follow these steps:
+# MCP servers in this project
 
-1. **Create a Template Script**
-   - Place a new `.template` file in the [`mcp_scripts`](mdc:mcp_scripts) directory.
-   - The template should include any necessary placeholders (e.g., for tokens) that will be replaced during setup.
+MCP configuration lives in **Cursor**, not in generated shell scripts in the repo.
 
-2. **Integrate with MCP Configuration**
-   - Add an entry for the new server script in [`mcp.json`](mdc:.cursor/mcp.json).
-   - Ensure the configuration references the correct script and any required environment variables.
+1. **Edit Cursor MCP config**
+   - Add or update server entries in `.cursor/mcp.json` (or Cursor Settings → MCP) per [Cursor MCP docs](https://docs.cursor.com/context/mcp).
 
-This approach ensures all MCP server scripts are templated, version-controlled, and consistently integrated into the project configuration.
+2. **Secrets and env**
+   - Put API keys and tokens in `.env` (local only; never commit) or in the `env` block of each server in MCP settings, as your team prefers.
+   - Reference the same variable names Task Master expects where applicable (see project `env.template` and Taskmaster rules).
+
+3. **No script templates in-repo**
+   - Do not reintroduce a directory of `.template` launcher scripts; keep launch commands and env in Cursor’s MCP configuration so setup matches your current MCP layout.
