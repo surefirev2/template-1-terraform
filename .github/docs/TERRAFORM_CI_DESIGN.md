@@ -4,7 +4,7 @@ This document describes how the Terraform workflow and scripts are structured so
 
 ## Overview
 
-- **Config-driven secrets**: Repo-specific `.github/terraform-env-vars.conf` lists env var names, optional `op://` refs, and literals. A generic script resolves refs and writes `.env`; the workflow supplies `OP_SERVICE_ACCOUNT_TOKEN`, org/repo, and **AWS credentials for the S3 backend** (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` from GitHub secrets). Add new vars in the config file; wire new secrets in the workflow only when a var must come from GitHub Actions.
+- **Config-driven secrets**: Repo-specific `.github/terraform-env-vars.conf` lists env var names, optional `op://` refs, and literals. A generic script resolves refs with the 1Password CLI and writes `.env`; the workflow passes the **GitHub Actions secret** `OP_SERVICE_ACCOUNT_TOKEN` (`${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}`) plus org/repo. **AWS credentials for the S3 backend** are loaded via `op://` lines in the same config (same 1Password item as the GitHub PAT). Add new vars in the config file; use `op://` or literals where possible so the workflow stays unchanged.
 - **Lock file**: Committed `.terraform.lock.hcl` is generated with `terraform init -backend=false` so it only contains `required_providers` (no backend-only providers). Pre-commit and CI run the same check; the hook can auto-fix the file and exit 1 so you commit the fix. Use `make lockfile` to regenerate.
 - **State lock**: Before plan/apply, a wait-unlock script polls with `terraform plan` until the state is free or a timeout; then it may force-unlock so the run can proceed. Plan/apply use `make` (Docker + `.env`).
 

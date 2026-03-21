@@ -12,10 +12,7 @@
 
 **Missing required provider?** CI installs providers from `terraform/.terraform.lock.hcl`. If you add a new provider (e.g. Cloudflare), run `make init` and **commit** the updated lock file. See [.github/docs/terraform-provider-lock.md](../.github/docs/terraform-provider-lock.md).
 
-**CI (GitHub Actions):** Plan and apply build `.env` via `.github/terraform-env-vars.conf` and `terraform-load-env.sh`. You need:
-
-- `OP_SERVICE_ACCOUNT_TOKEN` (1Password service account)
-- `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` (IAM user or role keys for the state bucket)
+**CI (GitHub Actions):** Plan and apply build `.env` via `.github/terraform-env-vars.conf` and `terraform-load-env.sh`, which uses the 1Password CLI to resolve `op://` refs (GitHub PAT and AWS keys for the S3 backend). Configure the **GitHub Actions repository secret** **`OP_SERVICE_ACCOUNT_TOKEN`** (the 1Password service account token); workflows reference `${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}`.
 
 See [.github/docs/terraform-1password.md](../.github/docs/terraform-1password.md).
 
