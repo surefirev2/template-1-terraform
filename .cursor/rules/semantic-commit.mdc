@@ -13,9 +13,9 @@ All commit messages must follow the [semantic commit message](mdc:https:/www.con
 - The description should be concise and use the imperative mood.
 
 ## Examples
-- `feat: add setup script for environment and hooks`
-- `fix(setup): prevent double .sh extension when migrating templates`
-- `docs(README): update setup instructions`
+- `feat(terraform): add s3 backend configuration`
+- `fix(ci): pass aws secrets into terraform load-env step`
+- `docs(terraform): clarify state bucket prerequisites`
 
 ## Consequences
 - Commits that do not follow this rule may be rejected or require rewording before merging.

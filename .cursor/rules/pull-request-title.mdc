@@ -13,7 +13,7 @@ All pull request titles must follow [semantic commit message](mdc:https:/www.con
 - The description should be concise and use the imperative mood.
 
 ## Example
-- `feat: add setup script for environment and hooks`
+- `feat(terraform): add s3 backend configuration`
 - `fix(ci): repair terraform validate step on main`
 
 ## Additional Notes
