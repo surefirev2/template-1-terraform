@@ -40,55 +40,26 @@ else
   echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" >> .env
 fi
 
-declare -A TEMPLATE_VARS
-TEMPLATE_VARS[__GITHUB_TOKEN_PLACEHOLDER__]="$GITHUB_PAT"
-TEMPLATE_VARS[__ANTHROPIC_API_KEY_PLACEHOLDER__]="$ANTHROPIC_API_KEY"
+# Install pre-commit hook (runs make run-pre-commit)
+echo "Setting up git pre-commit hook..."
+if [[ -d .git/hooks ]]; then
+  cat > .git/hooks/pre-commit << 'HOOK'
+#!/bin/sh
+# Git pre-commit hook to run pre-commit checks
 
-# Scan all .template files for unique placeholders
-ALL_PLACEHOLDERS=()
-for template in mcp_scripts/*.template; do
-  echo "Scanning $template for placeholders..."
-  while read -r placeholder; do
-    if [[ -z "${TEMPLATE_VARS[$placeholder]+x}" ]]; then
-      var_name=$(echo "$placeholder" | sed -E 's/^__|_PLACEHOLDER__$//g')
-      echo "Found placeholder: $placeholder (variable: $var_name)"
-      read -sp "Enter value for $var_name: " value
-      echo
-      TEMPLATE_VARS[$placeholder]="$value"
-      ALL_PLACEHOLDERS+=("$placeholder")
-    fi
-  done < <(grep -oE '__[A-Z0-9_]+_PLACEHOLDER__' "$template" | sort -u)
-done
-
-if [[ ${#ALL_PLACEHOLDERS[@]} -eq 0 ]]; then
-  echo "No additional placeholders found in templates."
+make run-pre-commit
+RESULT=$?
+if [ $RESULT -ne 0 ]; then
+  echo "Pre-commit checks failed. Commit aborted."
+  exit 1
 fi
 
-echo "Migrating .template scripts in mcp_scripts to .sh and replacing token placeholders..."
-for template in mcp_scripts/*.template; do
-  base="$(basename "$template" .template)"
-  shfile="mcp_scripts/${base}"
-  # Ensure the output ends with .sh, but not .sh.sh
-  if [[ "$shfile" != *.sh ]]; then
-    shfile="${shfile}.sh"
-  fi
-  if [[ -f "$shfile" ]]; then
-    echo "$shfile already exists, skipping."
-    continue
-  fi
-  content=$(cat "$template")
-  for placeholder in "${!TEMPLATE_VARS[@]}"; do
-    content="${content//${placeholder}/${TEMPLATE_VARS[$placeholder]}}"
-  done
-  echo "$content" > "$shfile"
-  chmod +x "$shfile"
-  echo "Created $shfile from $template"
-done
-
-# Install pre-commit hook
-echo "Setting up git pre-commit hook..."
-cp mcp_scripts/pre-commit.hook.template .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
+exit 0
+HOOK
+  chmod +x .git/hooks/pre-commit
+else
+  echo "Skipping pre-commit hook: .git/hooks not found (run git init first)."
+fi
 
 echo "Setup complete."
 echo
@@ -96,4 +67,5 @@ echo
 echo "Next steps:"
 echo "  1. Run: npm install"
 echo "  2. Then initialize Task Master: npx task-master init"
+echo "  3. Configure MCP servers in Cursor (e.g. .cursor/mcp.json) using keys from .env as needed"
 echo

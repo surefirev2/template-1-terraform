@@ -14,7 +14,7 @@ All pull request titles must follow [semantic commit message](mdc:https:/www.con
 
 ## Example
 - `feat: add setup script for environment and hooks`
-- `fix(mcp_scripts): correct token replacement logic`
+- `fix(ci): repair terraform validate step on main`
 
 ## Additional Notes
 - Pull requests that do not follow this rule may be rejected or require renaming before merging.
