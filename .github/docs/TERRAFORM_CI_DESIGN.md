@@ -4,7 +4,7 @@ This document describes how the Terraform workflow and scripts are structured so
 
 ## Overview
 
-- **Config-driven secrets**: Repo-specific `.github/terraform-env-vars.conf` lists env var names and optional `op://` refs. A generic script resolves refs and writes `.env`; the workflow only supplies `OP_SERVICE_ACCOUNT_TOKEN` and org/repo. No workflow edits when adding new secrets.
+- **Config-driven secrets**: Repo-specific `.github/terraform-env-vars.conf` lists env var names, optional `op://` refs, and literals. A generic script resolves refs and writes `.env`; the workflow supplies `OP_SERVICE_ACCOUNT_TOKEN`, org/repo, and **AWS credentials for the S3 backend** (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` from GitHub secrets). Add new vars in the config file; wire new secrets in the workflow only when a var must come from GitHub Actions.
 - **Lock file**: Committed `.terraform.lock.hcl` is generated with `terraform init -backend=false` so it only contains `required_providers` (no backend-only providers). Pre-commit and CI run the same check; the hook can auto-fix the file and exit 1 so you commit the fix. Use `make lockfile` to regenerate.
 - **State lock**: Before plan/apply, a wait-unlock script polls with `terraform plan` until the state is free or a timeout; then it may force-unlock so the run can proceed. Plan/apply use `make` (Docker + `.env`).
 
@@ -23,7 +23,7 @@ This document describes how the Terraform workflow and scripts are structured so
 | File | Role |
 |------|------|
 | `.github/terraform-env-vars.conf` | Repo-specific list of env vars (and optional `op://` refs). Add `TF_VAR_<name>` here for Terraform variables; the generic script does not derive them. |
-| `.github/scripts/terraform-load-env.sh` | Generic: reads config, resolves `op://` with 1Password CLI, writes `.env`. Derives only `TF_HTTP_PASSWORD` / `TF_VAR_github_token` from `GITHUB_PAT` so the backend works. |
+| `.github/scripts/terraform-load-env.sh` | Generic: reads config, resolves `op://` with 1Password CLI, writes `.env`. Derives `TF_VAR_github_token` from `GITHUB_PAT` when set. Remote state uses the **S3** backend; AWS credentials come from config (`AWS_*` lines). |
 | `.github/scripts/terraform-wait-unlock.sh` | Runs `terraform init -reconfigure` once so providers exist, then polls `terraform plan` until state is unlocked or timeout; force-unlocks on timeout when possible. |
 | `.github/scripts/terraform-lockfile-readonly.sh` | Pre-commit / CI: `init -backend=false -lockfile=readonly` in a temp dir; on failure, overwrites repo lock file with `init -backend=false` and exits 1. |
 | `.github/workflows/terraform.yaml` | Orchestrates the phases above; step names and comments mirror this design. |
